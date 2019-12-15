@@ -7,6 +7,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+***ISSUES*** 
+ The function is not solved for x. With fixed values, I can use uniroot to find the solution, but this doesnt't work when I try to use values from a dataframe. 
+ 
+Line 69 is my latest attempt at using our dataframe
+
+
 Load packages 
 ```{r}
 library(rootSolve)
@@ -25,9 +31,8 @@ uhi <- read_csv("uhi_test.csv")
 
 ### Surface Energy Balance - Solving for surface temperature 
 
-1. Run this code first to set the variables. 
+1. Run this code first to set the variables. These variables were given in the problem
 
-Note: For setting the variables, we've set the initial values as the same for the parking lot example in your assignment. 
 
 ```{r vars}
 T_a = 33 # ambient temp in Celsius 
@@ -61,7 +66,8 @@ temp_s
 
 
 ```
-3. Try inputting dataframe uhi to function
+3. Try inputting dataframe uhi to function 
+
 ```{r}
 # temperature is represented as x 
 fun <- function(T_a, alpha, eps, sigma, k_H, k_E, RH, RH_s, K_inc, Q_av){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
