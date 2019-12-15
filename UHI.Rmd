@@ -11,6 +11,9 @@ Load packages
 ```{r}
 library(rootSolve)
 library(tidyverse)
+library(purrr)
+library(dplyr)
+
 ```
 
 
@@ -43,7 +46,7 @@ Q_av = 0.9 * (K_inc*(1-alpha) + eps * sigma * T_a^4) # W/m^2
 
 ```
 
-2. Run this to solve for the surface temperature 
+2. Run this to solve for the surface temperature (with fixed values)
 
 ```{r function}
 # temperature is represented as x 
@@ -58,59 +61,21 @@ temp_s
 
 
 ```
-T_a = 33 # ambient temp in Celsius 
-alpha = 0.2 # albedo 
-eps = 0.95 # emissivity 
-sigma = 5.6704*10^-8 #W/m^2/K^4 stefan-boltzmann constant
-k_H = 21 # sensible heat conductivity [J/deg-C]
-k_E = 0 # 0 for non-wetted surface, 100 for fully wet. [J/kPa] Latent energy only present if surface is wet
-
-RH = 0.7 # Relative humidity of atmosphere, [0-1]
-RH_s = 0 # Relative humidity of the surface (assume 1 is wet/irrigated, 0 is dry)
-
-K_inc = 750 # W/m^2, incoming shortwave radiation
-L_inc = eps * sigma * T_a^4  # W/m^2, incoming longwave radiation
-Q_av = 0.9 * (K_inc*(1-alpha) + L_inc) # W/m^2 
-
-
-
-```{r function}
-range = c(0,100)
+3. Try inputting dataframe uhi to function
+```{r}
 # temperature is represented as x 
-fun = function(T_a){ -(0.9 * (K_inc*(1-alpha) + eps * sigma * (T_a)^4) + eps*sigma*(x+273.15)^4 + k_H*(x-(T_a)) + k_E*(RH_s*0.61078*exp(17.27*x/(1+237.3)) - RH*0.61078*exp(17.27*(T_a)/(T_a+237.3))))
+fun <- function(T_a, alpha, eps, sigma, k_H, k_E, RH, RH_s, K_inc, Q_av){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
 
-return(x)
 }
 
+#solve for x using uhi dataframe
+solve <- function(x) pmap_dbl(uhi, fun)
+uniroot.all(solve(), c(0,100))
+ 
 
-uhi$temp = fun(T_a = uhi$Tair)
-
-# solve function for temp, within the set range 
-range = c(0,100)
-temp_s = uniroot.all(fun, range)
-temp_s
 ```
 
-#' Power Required by Speed
-#'
-#' This function determines the power required to keep a vehicle moving at 
-#' a given speed
-#' @param cdrag coefficient due to drag default=0.3 
-#' @param crolling coefficient due to rolling/friction default=0.015
-#' @param v vehicle speed (m/2)
-#' @param m vehicle mass (kg)
-#' @param A area of front of vehicle (m2)
-#' @param g acceleration due to gravity (m/s) default=9.8
-#' @param pair (kg/m3) default =1.2
-#' @return power (W)
-
-autopower = function(V, m, A, cdrag=0.3, crolling=0.015,pair=1.2,g=9.8) {
-  P = crolling*m*g*V + 1/2*A*pair*cdrag*V**3
-  return(P)
-}
 
 
-possible_cars$power = autopower(V=speed_base, A = possible_cars$area, m=possible_cars$area)
 
 
-With the given inputs from step 1, the surface temperature is `r format(round(temp_s, 2), nsmall = 2)` degrees C. 
