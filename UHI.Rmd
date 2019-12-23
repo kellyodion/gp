@@ -36,7 +36,7 @@ hourly <- "hourly_2017_met.csv"
 
 
 ```{r vars}
-T_a = 33 # ambient temp in Celsius 
+T_a = 36.111# ambient temp in Celsius 
 alpha = 0.2 # albedo 
 eps = 0.95 # emissivity 
 sigma = 5.6704*10^-8 #W/m^2/K^4 stefan-boltzmann constant
@@ -69,8 +69,6 @@ temp_s
 ```
 
 
-
-
 3. Try inputting dataframe uhi to function 
 
 ```{r function}
@@ -80,9 +78,19 @@ fun <- function(alpha, eps, sigma, RH, RH_s, T_a, K_inc, k_H, k_E, Q_av){ (-Q_av
 }
 
 #solve for x using uhi dataframe
-solve <- function(x) pmap_dbl(fun, uhi)
+solve <- function(x) pmap_dbl(uhi, fun)
 uniroot.all(solve(), c(0,100))
  
+
+```
+
+4. Estimating cooling degree days (using baseline of 75.3 as found in NREL study). 
+*using fixed esimates until we get the function to read the met file*
+
+```{r}
+
+
+
 
 ```
 
