@@ -26,6 +26,7 @@ library(dplyr)
 load csv 
 ```{r}
 uhi <- read_csv("uhi_test.csv")
+hourly <- "hourly_2017_met.csv"
 
 ```
 
@@ -66,16 +67,20 @@ temp_s
 
 
 ```
+
+
+
+
 3. Try inputting dataframe uhi to function 
 
-```{r}
+```{r function}
 # temperature is represented as x 
-fun <- function(T_a, alpha, eps, sigma, k_H, k_E, RH, RH_s, K_inc, Q_av){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+fun <- function(alpha, eps, sigma, RH, RH_s, T_a, K_inc, k_H, k_E, Q_av){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
 
 }
 
 #solve for x using uhi dataframe
-solve <- function(x) pmap_dbl(uhi, fun)
+solve <- function(x) pmap_dbl(fun, uhi)
 uniroot.all(solve(), c(0,100))
  
 
