@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ***ISSUES*** 
  The function is not solved for x. With fixed values, I can use uniroot to find the solution, but this doesnt't work when I try to use values from a dataframe. 
  
-Line 69 is my latest attempt at using our dataframe
+Line 72 is my latest attempt at using our dataframe
 
 
 Load packages 
@@ -26,7 +26,7 @@ library(dplyr)
 load csv 
 ```{r}
 uhi <- read_csv("uhi_test.csv")
-hourly <- "hourly_2017_met.csv"
+hourly <- read_csv("hourly_2017_met.csv")
 
 ```
 
@@ -36,15 +36,15 @@ hourly <- "hourly_2017_met.csv"
 
 
 ```{r vars}
-T_a = 36.111# ambient temp in Celsius 
+T_a = 10.555# ambient temp in Celsius 
 alpha = 0.2 # albedo 
 eps = 0.95 # emissivity 
 sigma = 5.6704*10^-8 #W/m^2/K^4 stefan-boltzmann constant
 k_H = 21 # sensible heat conductivity [J/deg-C]
-k_E = 0 # 0 for non-wetted surface, 100 for fully wet. [J/kPa] Latent energy only present if surface is wet
+k_E = 100 # 0 for non-wetted surface, 100 for fully wet. [J/kPa] Latent energy only present if surface is wet
 
 RH = 0.7 # Relative humidity of atmosphere, [0-1]
-RH_s = 0 # Relative humidity of the surface (assume 1 is wet/irrigated, 0 is dry)
+RH_s = 1 # Relative humidity of the surface (assume 1 is wet/irrigated, 0 is dry)
 
 K_inc = 750 # W/m^2, incoming shortwave radiation
 #L_inc = eps * sigma * T_a^4  # W/m^2, incoming longwave radiation
@@ -87,11 +87,150 @@ uniroot.all(solve(), c(0,100))
 4. Estimating cooling degree days (using baseline of 75.3 as found in NREL study). 
 *using fixed esimates until we get the function to read the met file*
 
+
+```{r}
+#use hourly dataset to calculate daily high temp
+daily_high <- hourly %>% 
+  group_by(id) %>%
+  filter(Tair == max(Tair)) %>% 
+  distinct(id, .keep_all = TRUE)
+```
+
+Use daily high temps to estimate max, min and mean temps for the summer
+
 ```{r}
 
+#find maximum, minimum, and average temperature in hourly met data from 2017 
+
+max_temp <- max(daily_high$Tair, na.rm = TRUE)
+
+#maximum temperature was 36.111 degrees C
+
+min_temp <- min(daily_high$Tair, na.rm = TRUE)
+
+#minimum temp was 10.555 degrees C 
+
+mean_temp <- mean(daily_high$Tair, na.rm = TRUE)
+
+#mean temp was 24.19 degrees C  
+
+#plug these numbers back into the forumal in part 1, with 100% irrigation
+```
+
+
+Calculating maximum temperature estimates (changing k_E and RH_s) 
+*I changed k_E and RS together, assuming that a completely dry surafce would not have a relative surface humidity of 1, and vice versa* 
+```{r}
+
+#Plug our maximum temp (max_temp = 41.11) number back into the formula in part 1, with 100% k_E (irrigation) and RH_s (relative surface humidity) of 1
+
+fun <- function(x, T_a = max_temp, k_E = 100, RH_s = 1){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+max_cool = uniroot.all(fun, range)
+max_cool 
+
+#Calculate with 50% k_E and RH_s of 0.5
+
+fun <- function(x, T_a = max_temp, k_E = 50, RH_s = 0.5){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+irrigation_50 = uniroot.all(fun, range)
+irrigation_50 
+
+
+#Calculate with 0% k_E and RH_s of 0
+
+
+fun <- function(x, T_a = max_temp, k_E = 0, RH_s = 0){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+irrigation_0 = uniroot.all(fun, range)
+irrigation_0 
 
 
 
+```
+
+Calculating average temperature estimates 
+*I changed k_E and RS together, assuming that a completely dry surafce would not have a relative surface humidity of 1, and vice versa* 
+
+```{r}
+#Plug our maximum temp (mean_temp = 33.84) number back into the formula in part 1, with 100% k_E (irrigation) and RH_s (relative surface humidity) of 1
+
+fun <- function(x, T_a = mean_temp, k_E = 100, RH_s = 1){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+max_cool = uniroot.all(fun, range)
+max_cool 
+
+#Calculate with 50% k_E and RH_s of 0.5
+
+fun <- function(x, T_a = mean_temp, k_E = 50, RH_s = .5){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+max_cool = uniroot.all(fun, range)
+max_cool 
+
+
+
+#Calculate with 0% k_E and RH_s of 0
+
+
+fun <- function(x, T_a = mean_temp, k_E = 0, RH_s = 0){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+irrigation_0 = uniroot.all(fun, range)
+irrigation_0 
+```
+
+
+Calculating minimum temperature estimates
+
+```{r}
+#Plug our maximum temp (min_temp = 22.78) number back into the formula in part 1, with 100% k_E (irrigation) and RH_s (relative surface humidity) of 1
+
+fun <- function(x, T_a = min_temp, k_E = 100, RH_s = 1){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+max_cool = uniroot.all(fun, range)
+max_cool 
+
+#Calculate with 50% k_E and RH_s of 0.5
+
+fun <- function(x, T_a = min_temp, k_E = 50, RH_s = .5){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+max_cool = uniroot.all(fun, range)
+max_cool 
+
+
+#Calculate with 0% k_E and RH_s of 0
+
+
+fun <- function(x, T_a = min_temp, k_E = 0, RH_s = 0){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+irrigation_0 = uniroot.all(fun, range)
+irrigation_0 
 ```
 
 
