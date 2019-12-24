@@ -84,9 +84,11 @@ uniroot.all(solve(), c(0,100))
 
 ```
 
-4. Estimating cooling degree days (using baseline of 75.3 as found in NREL study). 
+Use the surface energy balance function to calculate cooling degree days and estimated reduction in residential energy temp for our hourly met data 
 *using fixed esimates until we get the function to read the met file*
 
+
+Start by getting daily high temp
 
 ```{r}
 #use hourly dataset to calculate daily high temp
@@ -114,9 +116,10 @@ mean_temp <- mean(daily_high$Tair, na.rm = TRUE)
 
 #mean temp was 24.19 degrees C  
 
-#plug these numbers back into the forumal in part 1, with 100% irrigation
+#plug these numbers back into the forumal in part 1, with 100% irrigation, 50% irrigation, and 0% irrigation
 ```
 
+Plug these numbers into the surface energy balance function (for max, mean, and min estimates)
 
 Calculating maximum temperature estimates (changing k_E and RH_s) 
 *I changed k_E and RS together, assuming that a completely dry surafce would not have a relative surface humidity of 1, and vice versa* 
@@ -134,31 +137,31 @@ max_cool
 
 #Calculate with 50% k_E and RH_s of 0.5
 
-fun <- function(x, T_a = max_temp, k_E = 50, RH_s = 0.5){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+fun <- function(x, T_a = max_temp, k_E = 50, RH_s = 1){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
 
 }
 
 range = c(0,100)
-irrigation_50 = uniroot.all(fun, range)
-irrigation_50 
+max_irrigation_50 = uniroot.all(fun, range)
+max_irrigation_50 
 
 
 #Calculate with 0% k_E and RH_s of 0
 
 
-fun <- function(x, T_a = max_temp, k_E = 0, RH_s = 0){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+fun <- function(x, T_a = max_temp, k_E = 0, RH_s = 1){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
 
 }
 
 range = c(0,100)
-irrigation_0 = uniroot.all(fun, range)
-irrigation_0 
+max_irrigation_0 = uniroot.all(fun, range)
+max_irrigation_0 
 
 
 
 ```
 
-Calculating average temperature estimates 
+Calculating average mean estimates 
 *I changed k_E and RS together, assuming that a completely dry surafce would not have a relative surface humidity of 1, and vice versa* 
 
 ```{r}
@@ -169,8 +172,8 @@ fun <- function(x, T_a = mean_temp, k_E = 100, RH_s = 1){ (-Q_av + eps*sigma*(x+
 }
 
 range = c(0,100)
-max_cool = uniroot.all(fun, range)
-max_cool 
+mean_cool = uniroot.all(fun, range)
+mean_cool 
 
 #Calculate with 50% k_E and RH_s of 0.5
 
@@ -179,8 +182,8 @@ fun <- function(x, T_a = mean_temp, k_E = 50, RH_s = .5){ (-Q_av + eps*sigma*(x+
 }
 
 range = c(0,100)
-max_cool = uniroot.all(fun, range)
-max_cool 
+mean_irrigation_50 = uniroot.all(fun, range)
+mean_irrigation_50 
 
 
 
@@ -192,8 +195,8 @@ fun <- function(x, T_a = mean_temp, k_E = 0, RH_s = 0){ (-Q_av + eps*sigma*(x+27
 }
 
 range = c(0,100)
-irrigation_0 = uniroot.all(fun, range)
-irrigation_0 
+mean_irrigation_0 = uniroot.all(fun, range)
+mean_irrigation_0 
 ```
 
 
@@ -207,8 +210,8 @@ fun <- function(x, T_a = min_temp, k_E = 100, RH_s = 1){ (-Q_av + eps*sigma*(x+2
 }
 
 range = c(0,100)
-max_cool = uniroot.all(fun, range)
-max_cool 
+min_cool = uniroot.all(fun, range)
+min_cool 
 
 #Calculate with 50% k_E and RH_s of 0.5
 
@@ -217,8 +220,8 @@ fun <- function(x, T_a = min_temp, k_E = 50, RH_s = .5){ (-Q_av + eps*sigma*(x+2
 }
 
 range = c(0,100)
-max_cool = uniroot.all(fun, range)
-max_cool 
+min_irrigation_50 = uniroot.all(fun, range)
+min_irrigation_50 
 
 
 #Calculate with 0% k_E and RH_s of 0
@@ -229,11 +232,121 @@ fun <- function(x, T_a = min_temp, k_E = 0, RH_s = 0){ (-Q_av + eps*sigma*(x+273
 }
 
 range = c(0,100)
-irrigation_0 = uniroot.all(fun, range)
-irrigation_0 
+min_irrigation_0 = uniroot.all(fun, range)
+min_irrigation_0 
 ```
 
+Cacluate cooling degree days 
+
+```{r}
+#use daily high cooling baseline using 75.3 as found in NREL study and cooling coefficient as found in Deschenes et al (SUBJEcT TO CHANGE)
+
+#convert baseline to celsius 
+
+cooling_baseline = ((75.3 -32)*5)/9
+
+cooling_coefficient = 0.0139
+
+#calculate current number of cooling days 
+
+mean_current_cooling = (mean_temp - cooling_baseline)*152
+
+max_current_cooling = (max_temp - cooling_baseline)*152
+
+min_current_cooling = (min_temp - cooling_baseline)*152
+
+#calculate new cooling days based on mean temp
+
+mean_new_cooling = (mean_cool - cooling_baseline)*152 
+
+#calculate new cooling days based on high temp
+
+max_new_cooling = (max_cool - cooling_baseline)*152 
+
+#calculate new cooling days based on low temp
+
+min_new_cooling = (min_cool - cooling_baseline)*152
+
+#difference in mean number of cooling days from current
+
+difference_mean_days = mean_current_cooling-mean_new_cooling
+
+mean_cooling_estimate = difference_mean_days/100 *cooling_coefficient
 
 
+#difference in max number of cooling days from current
+
+difference_max_days = max_current_cooling - max_new_cooling
+
+max_cooling_estimate = difference_max_days/100 *cooling_coefficient
+
+#difference in min number of cooling days from current
+
+difference_min_days = min_current_cooling - min_new_cooling
+
+min_cooling_estimate = difference_min_days/100 * cooling_coefficient 
+```
+
+Apply to Austin's annual energy consumption (will also look @ monthly consumption)
+```{r}
+
+#get city of Austin residential energy data from open data portal 
+
+#Average annual kwH for 2017 
+
+annual =10156 
+
+#residential energy rates for 2017 
+
+rate = 0.1051
+
+mean_energy_reduction = annual*mean_cooling_estimate
+
+max_energy_reduction = annual*max_cooling_estimate
+
+#aggregate these estimates across 400 homes 
+
+ag_mean_energy_reduction = mean_energy_reduction*400
+
+ag_max_energy_reduction = max_energy_reduction*400 
+
+#use $/kwH to estimate savings at the home and aggregate level 
+
+ind_mean_savings = mean_energy_reduction * rate
+
+ind_max_savings = max_energy_reduction * rate 
+
+ag_mean_savings = ag_mean_energy_reduction *rate 
+
+ag_max_savings = ag_max_energy_reduction * rate
+
+
+#calculate a monthly savings instead?? could be usefuk if we don't use entire summertime distribution 
+
+#Average kwH for May 2017
+
+may = 708 
+
+#Average kwH for June 2017
+
+june = 959
+
+#Average kwH for July 2017
+
+july = 1246 
+
+#Average kwH for August 2017
+
+august = 1277 
+
+#average kwH for September 2017 
+
+september = 1128 
+
+
+#calculate estimated savings 
+
+
+```
 
 
