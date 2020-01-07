@@ -1,0 +1,50 @@
+---
+title: "metcorrection"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Replace missing values from required data columns
+
+
+First read in - you will need to replace name to your local versions
+**note changing 05 in the name to 5 is necessary**
+
+Consider making a back up of the original file as it will be modified here
+```{r read}
+Kc_2017_data_5 <- read.table("Kc_2017_data_5.txt", header=T)
+knew = Kc_2017_data_5
+```
+
+Modify
+```{r mod}
+
+# windspeed is required to you have to get rid of the -9999
+knew = knew %>% mutate(U = ifelse(U < 0, 0, U))
+
+# get rid of zero windspeeds as this causes an error in estimating aerodynamic conductance
+knew = knew %>% mutate(U = ifelse(U == 0, 0.1, U))
+# pressure is not in correct units
+# I think it is inch of mecury should be kPa - multipley by 3.386
+
+knew = knew %>% mutate(pres = pres*3.386)
+
+
+# check all of the required values
+summary(knew[,c("U","RH","Tair","pres","rain","kdown")])
+```
+When happy overwrite file
+```{r mod}
+write.table(knew, file="Kc_2017_data_5.txt", row.names=F)
+```
+
+## Site Select Issues
+
+Something looks wierd about zo and zd - (and I think this causes the following error)
+So I changed them as well
+to 0.01 0.2 respectively
+

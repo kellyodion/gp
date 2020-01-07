@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
  The function is not solved for x. With fixed values, I can use uniroot to find the solution, but this doesnt't work when I try to use values from a dataframe. 
  
 Line 72 is my latest attempt at using our dataframe
-
+*STEP 0* 
 
 Load packages 
 ```{r}
@@ -30,21 +30,22 @@ hourly <- read_csv("hourly_2017_met.csv")
 
 ```
 
-### Surface Energy Balance - Solving for surface temperature 
+### Surface Energy Balance - Solving for surface temperature to get a sense of how much surface temp changes with irrigation
 
-1. Run this code first to set the variables. These variables were given in the problem
+*STEP 1*
 
+A. Run this code first to set the variables.
 
 ```{r vars}
-T_a = 10.555# ambient temp in Celsius 
+T_a = 33 # ambient temp in Celsius 
 alpha = 0.2 # albedo 
 eps = 0.95 # emissivity 
 sigma = 5.6704*10^-8 #W/m^2/K^4 stefan-boltzmann constant
 k_H = 21 # sensible heat conductivity [J/deg-C]
-k_E = 100 # 0 for non-wetted surface, 100 for fully wet. [J/kPa] Latent energy only present if surface is wet
+k_E = 0 # 0 for non-wetted surface, 100 for fully wet. [J/kPa] Latent energy only present if surface is wet
 
 RH = 0.7 # Relative humidity of atmosphere, [0-1]
-RH_s = 1 # Relative humidity of the surface (assume 1 is wet/irrigated, 0 is dry)
+RH_s = 0 # Relative humidity of the surface (assume 1 is wet/irrigated, 0 is dry)
 
 K_inc = 750 # W/m^2, incoming shortwave radiation
 #L_inc = eps * sigma * T_a^4  # W/m^2, incoming longwave radiation
@@ -52,7 +53,7 @@ Q_av = 0.9 * (K_inc*(1-alpha) + eps * sigma * T_a^4) # W/m^2
 
 ```
 
-2. Run this to solve for the surface temperature (with fixed values)
+B. Run this to solve for the surface temperature (with fixed values)
 
 ```{r function}
 # temperature is represented as x 
@@ -69,7 +70,7 @@ temp_s
 ```
 
 
-3. Try inputting dataframe uhi to function 
+C. Try inputting dataframe uhi to function 
 
 ```{r function}
 # temperature is represented as x 
@@ -84,11 +85,15 @@ uniroot.all(solve(), c(0,100))
 
 ```
 
-Use the surface energy balance function to calculate cooling degree days and estimated reduction in residential energy temp for our hourly met data 
-*using fixed esimates until we get the function to read the met file*
+
+*PART 2* 
+
+Use the surface energy balance function with our Austin met datato calculate cooling degree days and estimated reduction in residential energy temp for our hourly met data 
+
+*using mean, max, and minimum esimates from the data until we get the function to read the entire met file*
 
 
-Start by getting daily high temp
+A. Start by getting daily high temp
 
 ```{r}
 #use hourly dataset to calculate daily high temp
@@ -98,7 +103,7 @@ daily_high <- hourly %>%
   distinct(id, .keep_all = TRUE)
 ```
 
-Use daily high temps to estimate max, min and mean temps for the summer
+B. Use daily high temps to estimate max, min and mean temps for the summer
 
 ```{r}
 
@@ -119,7 +124,7 @@ mean_temp <- mean(daily_high$Tair, na.rm = TRUE)
 #plug these numbers back into the forumal in part 1, with 100% irrigation, 50% irrigation, and 0% irrigation
 ```
 
-Plug these numbers into the surface energy balance function (for max, mean, and min estimates)
+C. Plug these numbers into the surface energy balance function (for max, mean, and min estimates)
 
 Calculating maximum temperature estimates (changing k_E and RH_s) 
 *I changed k_E and RS together, assuming that a completely dry surafce would not have a relative surface humidity of 1, and vice versa* 
@@ -161,7 +166,7 @@ max_irrigation_0
 
 ```
 
-Calculating average mean estimates 
+Calculating mean temperature estimates 
 *I changed k_E and RS together, assuming that a completely dry surafce would not have a relative surface humidity of 1, and vice versa* 
 
 ```{r}
@@ -236,7 +241,7 @@ min_irrigation_0 = uniroot.all(fun, range)
 min_irrigation_0 
 ```
 
-Cacluate cooling degree days 
+D. Cacluate cooling degree days 
 
 ```{r}
 #use daily high cooling baseline using 75.3 as found in NREL study and cooling coefficient as found in Deschenes et al (SUBJEcT TO CHANGE)
@@ -245,7 +250,7 @@ Cacluate cooling degree days
 
 cooling_baseline = ((75.3 -32)*5)/9
 
-cooling_coefficient = 0.0139
+cooling_coefficient = 0.00139
 
 #calculate current number of cooling days 
 
@@ -287,7 +292,7 @@ difference_min_days = min_current_cooling - min_new_cooling
 min_cooling_estimate = difference_min_days/100 * cooling_coefficient 
 ```
 
-Apply to Austin's annual energy consumption (will also look @ monthly consumption)
+E. Apply to Austin's annual energy consumption (will also look @ monthly consumption)
 ```{r}
 
 #get city of Austin residential energy data from open data portal 
@@ -321,7 +326,143 @@ ag_mean_savings = ag_mean_energy_reduction *rate
 ag_max_savings = ag_max_energy_reduction * rate
 
 
-#calculate a monthly savings instead?? could be usefuk if we don't use entire summertime distribution 
+```
+
+*PART 3* 
+
+Calculating savings monthly instead of annually 
+
+Repeat the steps from part 2, but for each month instead of annually, to get estimates of reduced energy savings each month instead of an annual figure 
+```{r}
+#get mean high temps from each month 
+
+may_temp <- daily_high %>% 
+  filter(id < 152)
+
+may_mean_temp <- mean(may_temp$Tair, na.rm = TRUE)
+
+june_temp <- daily_high %>% 
+  filter(151 < id, id < 182)
+
+june_mean_temp <- mean(june_temp$Tair, na.rm = TRUE)
+
+july_temp <- daily_high %>% 
+  filter(181 < id, id < 213)
+
+july_mean_temp <- mean(july_temp$Tair, na.rm = TRUE)
+
+august_temp <- daily_high %>% 
+  filter(212 < id, id < 243)
+
+august_mean_temp <- mean(august_temp$Tair, na.rm = TRUE)
+
+sept_temp <- daily_high %>% 
+  filter(242 < id)
+
+sept_mean_temp <- mean(sept_temp$Tair, na.rm = TRUE)
+
+```
+
+Plug these numbers into the surface energy balance equation 
+```{r}
+fun <- function(x, T_a = sept_mean_temp, k_E = 100, RH_s = 1){ (-Q_av + eps*sigma*(x+273.15)^4 + k_H*(x-T_a) + k_E*(RH_s*0.61078*exp(17.27*x/(x+237.3)) - RH*0.61078*exp(17.27*T_a/(T_a+237.3))))
+
+}
+
+range = c(0,100)
+monthly_temp = uniroot.all(fun, range)
+monthly_temp
+
+
+#name each monthly average surface temp
+
+may_mean_cool = 29.68596 
+june_mean_cool = 32.29015 
+july_mean_cool = 35.30106 
+august_mean_cool = 32.81764 
+sept_mean_cool = 30.48862 
+
+
+```
+
+Calculate cooling days for each month 
+```{r}
+
+#cooling days for may 
+
+cooling_days_may_current = (may_mean_temp - cooling_baseline)*31
+
+cooling_days_may_predicted = (may_mean_cool - cooling_baseline)*31
+
+difference_may = (cooling_days_may_current - cooling_days_may_predicted)
+
+#cooling days for June 
+
+cooling_days_june_current = (june_mean_temp - cooling_baseline)*30
+
+cooling_days_june_predicted = (june_mean_cool - cooling_baseline)*30
+
+difference_june = (cooling_days_june_current - cooling_days_june_predicted)
+
+#cooling days for July 
+
+cooling_days_july_current = (july_mean_temp - cooling_baseline)*31
+
+cooling_days_july_predicted = (july_mean_cool - cooling_baseline)*31
+
+difference_july = (cooling_days_july_current - cooling_days_july_predicted)
+
+#cooling days for August 
+
+cooling_days_august_current = (august_mean_temp - cooling_baseline)*31
+
+cooling_days_august_predicted = (august_mean_cool - cooling_baseline)*31
+
+difference_august = (cooling_days_august_current - cooling_days_august_predicted)
+
+#cooling days for September 
+
+cooling_days_sept_current = (sept_mean_temp - cooling_baseline)*30
+
+cooling_days_sept_predicted = (sept_mean_cool - cooling_baseline)*30
+
+difference_sept = (cooling_days_sept_current - cooling_days_sept_predicted)
+
+```
+
+Calculate estimated 
+
+```{r}
+#get monthly cooling coefficient instead of annual 
+
+monthly_cooling_coefficient = cooling_coefficient*12
+
+#calculate new cooling degree days and impact on energy 
+
+#may
+
+may_cooling_estimate = difference_may/100 *monthly_cooling_coefficient
+
+#june 
+
+june_cooling_estimate = difference_june/100 *monthly_cooling_coefficient
+
+#july 
+
+july_cooling_estimate = difference_july/100 *monthly_cooling_coefficient
+
+#august 
+
+august_cooling_estimate = difference_august/100 *monthly_cooling_coefficient
+
+#september 
+
+sept_cooling_estimate = difference_sept/100 *monthly_cooling_coefficient
+```
+
+Apply this to Austin average monthly energy consumption 
+```{r}
+#get city of Austin residential energy data from open data portal 
 
 #Average kwH for May 2017
 
@@ -341,12 +482,86 @@ august = 1277
 
 #average kwH for September 2017 
 
-september = 1128 
+sept = 1128 
 
 
-#calculate estimated savings 
+#caclulate individual and aggregate energy reduction for each month
+
+#May 
+may_energy_reduction = may*may_cooling_estimate
+
+ag_may = may_energy_reduction*400
+
+#June
+
+june_energy_reduction = june*june_cooling_estimate
+
+ag_june = june_energy_reduction*400 
+
+#July 
+
+july_energy_reduction = july*july_cooling_estimate 
+
+ag_july = july_energy_reduction*400 
+
+#August 
+
+august_energy_reduction = august*august_cooling_estimate
+
+ag_august = august_energy_reduction*400 
+
+#Sept 
+
+sept_energy_reduction = sept*sept_cooling_estimate
+
+ag_sept = sept_energy_reduction*400 
 
 
+#add them up to check work from part 2 
+total_energy_reduction = ag_may + ag_june + ag_july + ag_august + ag_sept 
+```
+
+
+Caclulate monthly energy savings using rate from part 2
+```{r}
+#calculate individual and aggregate savings for each month 
+
+#May 
+
+may_ind_savings = may_energy_reduction * rate
+
+may_ag_savings = ag_may * rate 
+
+#June 
+
+june_ind_savings = june_energy_reduction *rate 
+
+june_ag_savings = ag_june* rate 
+
+#July 
+
+july_ind_savings = july_energy_reduction * rate 
+
+july_ag_savings = ag_july * rate 
+
+#August 
+
+august_ind_savings = august_energy_reduction * rate 
+
+august_ag_savings = ag_august * rate 
+
+#September 
+
+sept_ind_savings = sept_energy_reduction * rate 
+
+sept_ag_savings = ag_sept * rate 
+
+
+#add them up to check work from part 2 
+
+total_savings = may_ag_savings + june_ag_savings + july_ag_savings + august_ag_savings + sept_ag_savings
+
+#monthly estimates are a bit higher than annual estimates 
 ```
 
 
