@@ -10,23 +10,26 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 ```
-*comparing air temperature at 2 m above ground level*
-*Tsurf was exactly the same in all scenarios*
-This markdown for visualizing initial SUEWS runs
-```{r}
-BAU <- read.csv("BAU.txt", sep="")
+*All of these graphs are comparing air temperature at 2 m above ground level*
 
-veg_test <- read.csv("veg_test.txt", sep= "")
+
+
+This markdown for visualizing initial SUEWS runs
+Full pavement vs full trees and grass
+```{r}
+pavement <- read.csv("pavement.txt", sep="")
+
+all_trees <- read.csv("all_trees.txt", sep= "")
 
 ```
 Wrangle data so that it only shows daily high temp 
 ```{r}
-daily_high_veg <- veg_test %>% 
+daily_high_all_trees <- all_trees %>% 
   group_by(DOY) %>%
   filter(Tsurf == max(Tsurf)) %>% 
   distinct(DOY, .keep_all = TRUE)
 
-daily_high_BAU <- BAU %>% 
+daily_high_pavement <- pavement %>% 
    group_by(DOY) %>%
   filter(Tsurf == max(Tsurf)) %>% 
   distinct(DOY, .keep_all = TRUE)
@@ -34,7 +37,7 @@ daily_high_BAU <- BAU %>%
 
 Merge dataframes 
 ```{r}
-merged_test <- merge(daily_high_BAU,daily_high_veg,by='DOY', all.x=T) %>% 
+merged_test <- merge(daily_high_pavement,daily_high_all_trees,by='DOY', all.x=T) %>% 
   select(DOY, Year.x, Hour.x, T2.x, T2.y) %>% 
     rename(
     Year = Year.x, 
@@ -57,12 +60,17 @@ graph
 
 
 ```
+
+
+Visualizing runs with semi realistic land cover fractions (0.3 paved, 0.2 buildings, 0.1 grass, 0.1 soil, 0.3 dec trees)
+Changed from 0 irrigation to full irrigation
+
 ```{r}
-pavement <- read.csv("all_pavement.txt", sep="")
+no_irrigation <- read.csv("all_pavement.txt", sep="")
 
-all_trees <- read.csv("all_trees.txt", sep= "")
 
-realistic <- read.csv("realistic.txt", sep = "")
+
+irrigation <- read.csv("realistic.txt", sep = "")
 
 ```
 
@@ -81,12 +89,12 @@ plot(all_trees$Evap*24)
 ```
 
 ```{r}
-daily_high_pavement <- pavement %>% 
+daily_high_no_irr <- no_irrigation %>% 
   group_by(DOY) %>%
   filter(Tsurf == max(Tsurf)) %>% 
   distinct(DOY, .keep_all = TRUE)
 
-daily_high_trees <- realistic %>% 
+daily_high_irr <- irrigation %>% 
    group_by(DOY) %>%
   filter(Tsurf == max(Tsurf)) %>% 
   distinct(DOY, .keep_all = TRUE)
@@ -94,7 +102,7 @@ daily_high_trees <- realistic %>%
 ```
 
 ```{r}
-merged_test2 <- merge(daily_high_pavement,daily_high_trees,by='DOY', all.x=T) %>% 
+merged_test2 <- merge(daily_high_no_irr,daily_high_irr,by='DOY', all.x=T) %>% 
   select(DOY, Year.x, Hour.x, T2.x, T2.y) %>% 
     rename(
     Year = Year.x, 
