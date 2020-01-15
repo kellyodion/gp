@@ -1,0 +1,115 @@
+---
+title: "SUEWS"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+*comparing air temperature at 2 m above ground level*
+*Tsurf was exactly the same in all scenarios*
+This markdown for visualizing initial SUEWS runs
+```{r}
+BAU <- read.csv("BAU.txt", sep="")
+
+veg_test <- read.csv("veg_test.txt", sep= "")
+
+```
+Wrangle data so that it only shows daily high temp 
+```{r}
+daily_high_veg <- veg_test %>% 
+  group_by(DOY) %>%
+  filter(Tsurf == max(Tsurf)) %>% 
+  distinct(DOY, .keep_all = TRUE)
+
+daily_high_BAU <- BAU %>% 
+   group_by(DOY) %>%
+  filter(Tsurf == max(Tsurf)) %>% 
+  distinct(DOY, .keep_all = TRUE)
+```
+
+Merge dataframes 
+```{r}
+merged_test <- merge(daily_high_BAU,daily_high_veg,by='DOY', all.x=T) %>% 
+  select(DOY, Year.x, Hour.x, T2.x, T2.y) %>% 
+    rename(
+    Year = Year.x, 
+    Hour = Hour.x,
+    Before = T2.x,
+    After = T2.y
+    )
+  
+```
+
+Graph the temps
+```{r}
+graph <- ggplot(merged_test, aes(x = DOY)) +
+  geom_line(aes(y = Before), color = "red") +
+  geom_line(aes(y = After), color = "green") +
+  scale_color_manual(values = c("#000033", "#00AFBB"))
+  
+
+graph
+
+
+```
+```{r}
+pavement <- read.csv("all_pavement.txt", sep="")
+
+all_trees <- read.csv("all_trees.txt", sep= "")
+
+realistic <- read.csv("realistic.txt", sep = "")
+
+```
+
+```{r}
+names(pavement)
+summary(pavement$Tsurf)
+summary(all_trees$Tsurf)
+summary(pavement$Irr)
+summary(all_trees$Irr)
+summary(pavement$LAI)
+summary(all_trees$LAI)
+
+
+plot(all_trees$Evap*24)
+
+```
+
+```{r}
+daily_high_pavement <- pavement %>% 
+  group_by(DOY) %>%
+  filter(Tsurf == max(Tsurf)) %>% 
+  distinct(DOY, .keep_all = TRUE)
+
+daily_high_trees <- realistic %>% 
+   group_by(DOY) %>%
+  filter(Tsurf == max(Tsurf)) %>% 
+  distinct(DOY, .keep_all = TRUE)
+
+```
+
+```{r}
+merged_test2 <- merge(daily_high_pavement,daily_high_trees,by='DOY', all.x=T) %>% 
+  select(DOY, Year.x, Hour.x, T2.x, T2.y) %>% 
+    rename(
+    Year = Year.x, 
+    Hour = Hour.x,
+    Before = T2.x,
+    After = T2.y
+    )
+```
+
+```{r}
+graph2 <- ggplot(merged_test2, aes(x = DOY)) +
+  geom_line(aes(y = Before), color = "darkred") +
+  geom_line(aes(y = After), color = "green") 
+ 
+
+graph2
+```
+

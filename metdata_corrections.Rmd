@@ -16,8 +16,8 @@ First read in - you will need to replace name to your local versions
 
 Consider making a back up of the original file as it will be modified here
 ```{r read}
-Kc_2017_data_5 <- read.table("Kc_2017_data_5.txt", header=T)
-knew = Kc_2017_data_5
+Kc_2017_data_60 <- read.table("Kc_2017_data_60.txt", header=T)
+knew = Kc_2017_data_60
 ```
 
 Modify
@@ -29,22 +29,30 @@ knew = knew %>% mutate(U = ifelse(U < 0, 0, U))
 # get rid of zero windspeeds as this causes an error in estimating aerodynamic conductance
 knew = knew %>% mutate(U = ifelse(U == 0, 0.1, U))
 # pressure is not in correct units
-# I think it is inch of mecury should be kPa - multipley by 3.386
+# I think it is inch of mecury should be kPa - multiply by 3.386
 
 knew = knew %>% mutate(pres = pres*3.386)
 
+knew = knew %>% mutate(pres = ifelse(pres == 0, 98, pres))
 
+knew = knew %>% mutate(kdown = ifelse(kdown <0 , 0, kdown))
+
+knew = knew %>% mutate(RH = ifelse(RH == 0, 47, RH))
+
+knew = knew %>% mutate(xsmd = ifelse(xsmd > 0, -999, xsmd))
+ 
 # check all of the required values
 summary(knew[,c("U","RH","Tair","pres","rain","kdown")])
 ```
 When happy overwrite file
 ```{r mod}
-write.table(knew, file="Kc_2017_data_5.txt", row.names=F)
+write.table(knew, file="Kc_2017_data_60.txt", row.names=F)
 ```
 
 ## Site Select Issues
 
-Something looks wierd about zo and zd - (and I think this causes the following error)
+Something looks weird about zo and zd - (and I think this causes the following error)
 So I changed them as well
 to 0.01 0.2 respectively
+
 

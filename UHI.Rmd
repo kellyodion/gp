@@ -19,6 +19,8 @@ library(rootSolve)
 library(tidyverse)
 library(purrr)
 library(dplyr)
+library(MASS)
+library(reshape)
 
 ```
 
@@ -385,6 +387,29 @@ sept_mean_cool = 30.48862
 
 ```
 
+Visualize the results 
+```{r}
+months <- c("May", "June", "July", "August", "September")
+
+Actual<- c(may_mean_temp, june_mean_temp, july_mean_temp, august_mean_temp, sept_mean_temp)
+
+Predicted <- c(may_mean_cool, june_mean_cool, july_mean_cool, august_mean_cool, sept_mean_cool)
+
+temp_df <- data.frame(months, temperature_actual, temperature_predicted)
+
+
+
+melted_df <- melt(temp_df, id = "months") 
+
+temp_graph <- ggplot(melted_df, aes(x = months, y = value)) +
+                       geom_col(aes(fill = variable), position = "dodge") +
+                      scale_fill_manual(values = c("#33CCCC", "#00AFBB")) +
+                      theme_classic() +
+  labs(x = "Month", y = "Temperature (Degrees C)", title = "Actual vs. Predicted Temperature (Summer 2017)") 
+
+temp_graph
+```
+
 Calculate cooling days for each month 
 ```{r}
 
@@ -521,6 +546,25 @@ ag_sept = sept_energy_reduction*400
 total_energy_reduction = ag_may + ag_june + ag_july + ag_august + ag_sept 
 ```
 
+Visualize this 
+```{r}
+Energy <- c(may, june, july, august, sept)
+
+Reduction <- c(may_energy_reduction, june_energy_reduction, july_energy_reduction, august_energy_reduction, sept_energy_reduction)
+
+energy_df <- data.frame(months, Reduction, Energy)
+
+melted_energy <- melt(energy_df, id = "months") 
+
+temp_graph <- ggplot(melted_energy, aes(x = months, y = value)) +
+                       geom_col(aes(fill = variable)) +
+                      scale_fill_manual(values = c("darkred", "darkgreen")) +
+                      theme_classic() +
+  labs(x = "Month", y = "Energy Consumption (kWh", title = "Potential Reduction in Energy Use") 
+
+temp_graph
+
+```
 
 Caclulate monthly energy savings using rate from part 2
 ```{r}
@@ -564,4 +608,8 @@ total_savings = may_ag_savings + june_ag_savings + july_ag_savings + august_ag_s
 #monthly estimates are a bit higher than annual estimates 
 ```
 
+Visualize energy savings 
+```{r}
+
+```
 
