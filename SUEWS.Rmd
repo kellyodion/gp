@@ -21,6 +21,8 @@ pavement <- read.csv("pavement.txt", sep="")
 
 all_trees <- read.csv("all_trees.txt", sep= "")
 
+more_tree <- read.csv("moretree.txt", sep= "")
+
 ```
 Wrangle data so that it only shows daily high temp 
 ```{r}
@@ -66,11 +68,11 @@ Visualizing runs with semi realistic land cover fractions (0.3 paved, 0.2 buildi
 Changed from 0 irrigation to full irrigation
 
 ```{r}
-no_irrigation <- read.csv("all_pavement.txt", sep="")
+no_irrigation <- read.csv("no_irrigation.txt", sep="")
 
 
 
-irrigation <- read.csv("realistic.txt", sep = "")
+irrigation <- read.csv("irrigation.txt", sep = "")
 
 ```
 
@@ -82,6 +84,8 @@ summary(pavement$Irr)
 summary(all_trees$Irr)
 summary(pavement$LAI)
 summary(all_trees$LAI)
+summary(more_tree$T2)
+summary(no_irrigation$T2)
 
 
 plot(all_trees$Evap*24)
